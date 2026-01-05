@@ -1,4 +1,7 @@
 {
-  "buildCommand": "npm install --legacy-peer-deps && npm run build",
-  "installCommand": "npm install --legacy-peer-deps"
+  "buildCommand": "NG_APP_GEMINI_API_KEY=$NG_APP_GEMINI_API_KEY npm install --legacy-peer-deps && npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "env": {
+    "NG_APP_GEMINI_API_KEY": "@gemini_api_key"
+  }
 }
