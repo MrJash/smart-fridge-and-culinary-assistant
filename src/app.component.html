@@ -1,0 +1,142 @@
+<!-- Loader Overlay -->
+@if (store.isLoading()) {
+  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300">
+    <!-- Multi-layer background for smooth high-quality blur without banding -->
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-xl"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-950/30 via-slate-950/80 to-slate-950"></div>
+    
+    <div class="relative flex flex-col items-center z-10 p-8 rounded-3xl">
+      <!-- Animated Icon Container -->
+      <div class="relative w-24 h-24 flex items-center justify-center mb-8">
+        <!-- Outer Ripples -->
+        <div class="absolute inset-0 rounded-full border border-emerald-500/20 animate-ping"></div>
+        <div class="absolute inset-0 rounded-full border border-emerald-500/10 animate-ping" style="animation-delay: 0.2s"></div>
+        
+        <!-- Rotating Ring -->
+        <div class="absolute inset-2 rounded-full border-t-2 border-emerald-400/80 animate-spin"></div>
+        <div class="absolute inset-2 rounded-full border-r-2 border-emerald-400/20 animate-spin" style="animation-duration: 3s"></div>
+        
+        <!-- Icon -->
+        <span class="material-icons-round text-emerald-400 text-4xl animate-pulse relative z-10 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">assistant</span>
+      </div>
+
+      <!-- Text -->
+      <h2 class="text-white font-bold text-2xl tracking-tight text-center drop-shadow-md">Consulting Chef AI...</h2>
+      <p class="text-slate-400 text-sm mt-3 font-medium text-center tracking-wide">Analyzing ingredients & crafting recipes</p>
+    </div>
+  </div>
+}
+
+<!-- Error Toast -->
+@if (store.error()) {
+  <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[60] animate-slide-down">
+    <div class="flex items-center gap-3 bg-red-950/90 text-red-200 px-6 py-4 rounded-xl shadow-2xl border border-red-500/20 backdrop-blur-md">
+      <span class="material-icons-round text-red-400">error_outline</span>
+      <span class="font-medium text-sm">{{ store.error() }}</span>
+      <button (click)="store.setError(null)" class="ml-2 hover:bg-red-900/50 rounded-full p-1 transition">
+        <span class="material-icons-round text-sm">close</span>
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Success Toast -->
+@if (store.successMessage()) {
+  <div class="fixed top-6 left-1/2 -translate-x-1/2 z-[60] animate-slide-down">
+    <div class="flex items-center gap-3 bg-emerald-950/90 text-emerald-100 px-6 py-4 rounded-xl shadow-2xl border border-emerald-500/20 backdrop-blur-md">
+      <div class="p-1 bg-emerald-500/20 rounded-full">
+         <span class="material-icons-round text-emerald-400 text-lg">check</span>
+      </div>
+      <span class="font-medium text-sm">{{ store.successMessage() }}</span>
+    </div>
+  </div>
+}
+
+<div class="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden relative">
+  
+  <!-- Navigation Rail (Left) - Only visible after scanning (not in camera view) -->
+  @if (store.currentView() !== 'camera') {
+    <aside class="w-16 md:w-20 lg:w-64 bg-slate-900/60 backdrop-blur-xl border-r border-slate-800 flex flex-col z-20 transition-all duration-300 animate-slide-right">
+      <!-- Brand -->
+      <div class="h-20 flex items-center justify-center lg:justify-start lg:px-6 gap-3 text-emerald-500 border-b border-slate-800/50">
+        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+          <span class="material-icons-round text-2xl">restaurant_menu</span>
+        </div>
+        <h1 class="hidden lg:block text-xl font-bold tracking-tight text-white">Fridge<span class="text-emerald-500">AI</span></h1>
+      </div>
+
+      <!-- Filters Section -->
+      <nav class="flex-1 py-6 px-2 space-y-6 w-full overflow-y-auto custom-scroll">
+        <!-- Diet Filters -->
+        <div class="space-y-2">
+          <div class="px-2 lg:px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden lg:block">Dietary Preferences</div>
+          @for (filter of filters; track filter.id) {
+            <button 
+              (click)="store.setDietaryFilter(filter.id)"
+              class="w-full flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-4 py-3 rounded-xl transition-all group relative"
+              [class]="store.dietaryFilter() === filter.id ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'">
+              
+              <span class="material-icons-round text-xl">{{ filter.icon }}</span>
+              <span class="hidden lg:block font-medium text-sm">{{ filter.label }}</span>
+              
+              <!-- Mobile tooltip -->
+              <div class="lg:hidden absolute left-14 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-slate-700">
+                {{ filter.label }}
+              </div>
+            </button>
+          }
+        </div>
+      </nav>
+
+      <!-- Bottom Actions -->
+      <div class="p-2 lg:p-4 border-t border-slate-800/50">
+        <button (click)="toggleShoppingList()" class="w-full flex items-center justify-center lg:justify-start gap-3 px-2 lg:px-4 py-3 rounded-xl bg-slate-800 text-emerald-400 hover:bg-slate-700 transition-all group relative">
+          <div class="relative">
+             <span class="material-icons-round">shopping_basket</span>
+             @if (store.shoppingList().length > 0) {
+               <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-slate-800"></span>
+             }
+          </div>
+          <span class="hidden lg:block font-medium text-sm">Pantry List</span>
+        </button>
+      </div>
+    </aside>
+  }
+
+  <!-- Main Content Area -->
+  <main class="flex-1 relative overflow-hidden flex flex-col bg-slate-950">
+    <!-- View Switcher -->
+    @switch (store.currentView()) {
+      @case ('camera') {
+        <app-camera></app-camera>
+      }
+      @case ('dashboard') {
+        <app-recipe-list></app-recipe-list>
+      }
+      @case ('cooking') {
+        <app-cooking-mode></app-cooking-mode>
+      }
+    }
+  </main>
+
+  <!-- Sliding Shopping List Drawer (Right) -->
+  
+  <!-- Backdrop for ALL Screens (transparent on desktop if desired, but here specific for click-away) -->
+  <div 
+    *ngIf="showShoppingList" 
+    (click)="toggleShoppingList()" 
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 cursor-pointer animate-fade-in">
+  </div>
+
+  <aside 
+    [class.translate-x-full]="!showShoppingList" 
+    [class.translate-x-0]="showShoppingList"
+    class="fixed inset-y-0 right-0 z-40 w-80 shadow-2xl transform transition-transform duration-300 ease-out border-l border-slate-800 bg-slate-900">
+    <app-shopping-list></app-shopping-list>
+    
+    <!-- Close Button -->
+    <button (click)="toggleShoppingList()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-white lg:hidden">
+      <span class="material-icons-round">close</span>
+    </button>
+  </aside>
+</div>
