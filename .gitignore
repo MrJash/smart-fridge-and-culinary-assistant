@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .angular
+src/environments/
 
 # Editor directories and files
 .vscode/*
