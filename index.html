@@ -24,6 +24,19 @@
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
+
+    /* Anti-banding gradient fix */
+    @supports (mix-blend-mode: lighten) {
+      .gradient-antiband::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(45deg, transparent 48%, rgba(255, 255, 255, 0.02) 49%, rgba(255, 255, 255, 0.02) 51%, transparent 52%);
+        background-size: 100px 100px;
+        pointer-events: none;
+        mix-blend-mode: lighten;
+      }
+    }
   </style>
   <script type="importmap">
 {
