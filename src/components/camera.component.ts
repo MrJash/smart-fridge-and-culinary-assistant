@@ -8,26 +8,31 @@ import { StoreService } from '../services/store.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex flex-col items-center justify-center min-h-full w-full p-4 relative animate-fade-in overflow-y-auto">
+    <div class="flex flex-col items-center justify-center min-h-full w-full p-4 relative animate-fade-in overflow-y-auto bg-slate-950">
       
       <!-- Instructions overlay -->
-      <div class="text-center z-10 mb-6 mt-12 md:mt-0">
-        <h2 class="text-3xl font-light text-white drop-shadow-lg tracking-wide">Scan Your Fridge</h2>
-        <p class="text-slate-300 text-sm mt-1 drop-shadow-md">We'll find the ingredients for you.</p>
+      <div class="text-center z-10 mb-8 mt-12 md:mt-0">
+        <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-4">
+          <span class="material-icons-round text-emerald-400 text-sm">auto_awesome</span>
+          <span class="text-emerald-400 text-sm font-medium">AI-Powered Detection</span>
+        </div>
+        <h2 class="text-4xl font-bold text-white drop-shadow-lg tracking-tight mb-2">Scan Your Fridge</h2>
+        <p class="text-slate-400 text-base mt-1 drop-shadow-md">Take a photo or upload an image to discover recipes</p>
       </div>
 
       <!-- Camera/Upload Viewfinder -->
-      <div class="relative w-full max-w-lg aspect-[3/4] md:aspect-[4/3] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 group shrink-0">
+      <div class="relative w-full max-w-lg aspect-[3/4] md:aspect-[4/3] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50 group shrink-0 ring-1 ring-slate-800">
         
         <!-- Video Element -->
         <video #videoRef autoplay playsinline class="absolute inset-0 w-full h-full object-cover hidden" [class.block]="isStreamActive()"></video>
         
         <!-- Upload Placeholder -->
-        <div *ngIf="!isStreamActive()" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/50 backdrop-blur-sm transition-all duration-300 group-hover:bg-slate-800/40">
-           <div class="w-24 h-24 rounded-full bg-slate-700/50 flex items-center justify-center mb-6 ring-4 ring-emerald-500/20 group-hover:scale-110 transition-transform duration-300">
-             <span class="material-icons-round text-5xl text-emerald-400">add_a_photo</span>
+        <div *ngIf="!isStreamActive()" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-800/60 backdrop-blur-sm transition-all duration-300">
+           <div class="w-28 h-28 rounded-full bg-emerald-500/15 flex items-center justify-center mb-6 ring-4 ring-emerald-500/20 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-900/20">
+             <span class="material-icons-round text-6xl text-emerald-400">add_a_photo</span>
            </div>
-           <p class="text-lg font-medium text-slate-300">Tap to start</p>
+           <p class="text-lg font-medium text-white mb-1">Tap to start</p>
+           <p class="text-sm text-slate-500">or use the buttons below</p>
         </div>
 
         <!-- Scanning Overlay (Decorative) -->
@@ -76,17 +81,25 @@ import { StoreService } from '../services/store.service';
 
       <!-- Saved Profiles Section -->
       @if (!isStreamActive() && store.savedProfiles().length > 0) {
-        <div class="w-full max-w-lg mb-8 animate-fade-in border-t border-slate-800 pt-6">
-          <p class="text-slate-500 text-xs font-bold uppercase tracking-widest text-center mb-4">Or load saved fridge</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="w-full max-w-3xl mb-8 animate-fade-in px-4">
+          <!-- Separator -->
+          <div class="flex items-center gap-4 mb-5">
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent to-slate-700"></div>
+            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest whitespace-nowrap">Saved Fridges</span>
+            <div class="flex-1 h-px bg-gradient-to-l from-transparent to-slate-700"></div>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             @for (profile of store.savedProfiles(); track profile.id) {
-              <button (click)="store.loadProfile(profile)" class="flex flex-col text-left p-3 rounded-xl bg-slate-800/40 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 transition-all group">
-                <div class="flex justify-between items-start mb-1">
-                   <div class="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-400">{{ profile.slotId }}</div>
-                   <span class="material-icons-round text-emerald-500/50 group-hover:text-emerald-400 text-lg">arrow_forward</span>
+              <button (click)="store.loadProfile(profile)" class="flex items-center gap-3 text-left p-4 rounded-2xl bg-slate-800/40 hover:bg-slate-800 border border-slate-700/50 hover:border-emerald-500/50 transition-all group">
+                <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 flex items-center justify-center text-sm font-bold text-emerald-400 border border-emerald-500/20">
+                  {{ profile.slotId }}
                 </div>
-                <span class="text-white font-bold text-sm truncate w-full">{{ profile.name }}</span>
-                <span class="text-[10px] text-slate-400">{{ profile.createdAt | date:'shortDate' }}</span>
+                <div class="flex-1 overflow-hidden">
+                  <span class="text-white font-semibold text-sm block truncate" [title]="profile.name">{{ profile.name }}</span>
+                  <span class="text-xs text-slate-500 block">{{ profile.createdAt | date:'MMM d, h:mm a' }}</span>
+                </div>
+                <span class="material-icons-round text-emerald-500/50 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all">arrow_forward</span>
               </button>
             }
           </div>
@@ -170,8 +183,6 @@ export class CameraComponent {
       const result = await this.geminiService.analyzeFridge(base64, this.store.dietaryFilter());
       this.store.setAnalysisResult(result);
       
-      // Fallback: If AI detected ingredients but failed to generate recipes (common with empty or complex prompts),
-      // we force a regeneration.
       if (result.detectedIngredients && result.detectedIngredients.length > 0 && result.recipes && result.recipes.length === 0) {
         console.warn('Analysis returned ingredients but no recipes. Triggering fallback generation...');
         await this.store.regenerateRecipes(result.detectedIngredients, this.store.dietaryFilter());

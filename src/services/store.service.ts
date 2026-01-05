@@ -41,9 +41,9 @@ export class StoreService {
   private geminiService = inject(GeminiService);
 
   // State
-  readonly currentView = signal<'camera' | 'dashboard' | 'cooking'>('camera');
+  readonly currentView = signal<'landing' | 'camera' | 'dashboard' | 'cooking'>('landing');
   
-  // Holds the raw API response (all recipes)
+  // Holds the raw API response
   readonly analysisResult = signal<AnalysisResult | null>(null);
   
   readonly selectedRecipe = signal<Recipe | null>(null);
@@ -100,7 +100,6 @@ export class StoreService {
       try {
         return crypto.randomUUID();
       } catch (e) {
-        // Fallback
       }
     }
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -138,7 +137,7 @@ export class StoreService {
 
   // --- Actions ---
 
-  setView(view: 'camera' | 'dashboard' | 'cooking') {
+  setView(view: 'landing' | 'camera' | 'dashboard' | 'cooking') {
     this.currentView.set(view);
   }
 
@@ -181,7 +180,7 @@ export class StoreService {
 
     const newProfile: FridgeProfile = {
       id: this.generateId(),
-      slotId: Number(slotId), // Ensure number
+      slotId: Number(slotId),
       name,
       createdAt: Date.now(),
       data: currentData,

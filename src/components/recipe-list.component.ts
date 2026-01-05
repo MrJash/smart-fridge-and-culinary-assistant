@@ -1,54 +1,72 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StoreService, Recipe } from '../services/store.service';
 
 @Component({
   selector: 'app-recipe-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="h-full flex flex-col bg-slate-950 animate-fade-in relative">
       
       <!-- Top Bar: Ingredients & Status -->
-      <div class="p-6 md:p-8 pb-4 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md z-10 sticky top-0 shrink-0">
-        <div class="flex flex-col gap-2 mb-4">
-          <div class="flex justify-between items-baseline">
-             <h2 class="text-3xl font-bold text-white tracking-tight">Your Fridge</h2>
-             <span class="text-slate-400 text-sm font-medium">{{ store.analysisResult()?.detectedIngredients?.length || 0 }} items found</span>
+      <div class="p-6 md:p-8 pb-5 bg-gradient-to-b from-slate-900 to-slate-950 z-10 sticky top-0 shrink-0">
+        <!-- Header Row -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-3xl font-bold text-white tracking-tight mb-1">Your Fridge</h2>
+            <div class="flex items-center gap-3 text-sm">
+              <span class="text-slate-400">
+                <span class="text-emerald-400 font-bold">{{ store.analysisResult()?.detectedIngredients?.length || 0 }}</span> ingredients detected
+              </span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span class="text-slate-400">
+                Filter: <span class="text-emerald-400 font-semibold">{{ store.dietaryFilter() === 'None' ? 'All' : store.dietaryFilter() }}</span>
+              </span>
+            </div>
           </div>
           
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2 text-slate-400 text-sm">
-               <span>Filter: <span class="text-emerald-400 font-semibold">{{ store.dietaryFilter() === 'None' ? 'All Recipes' : store.dietaryFilter() }}</span></span>
-            </div>
-            
-            <div class="flex gap-2">
-              <button (click)="openManageModal()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
-                <span class="material-icons-round text-sm">inventory</span> Manage Fridge
-              </button>
-              <button (click)="store.reset()" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-slate-700">
-                <span class="material-icons-round text-sm">cameraswitch</span> Rescan
-              </button>
-            </div>
+          <div class="flex gap-2">
+            <button (click)="openManageModal()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border border-slate-700 hover:border-emerald-500/30">
+              <span class="material-icons-round text-lg">inventory</span> 
+              <span class="hidden sm:inline">Manage</span>
+            </button>
+            <button (click)="store.reset()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 border border-slate-700 hover:border-slate-600">
+              <span class="material-icons-round text-lg">cameraswitch</span> 
+              <span class="hidden sm:inline">Rescan</span>
+            </button>
           </div>
         </div>
 
+        <!-- Separator -->
+        <div class="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-5"></div>
+
         <!-- Detected Chips -->
-        <div class="flex flex-wrap gap-2 max-h-32 overflow-y-auto custom-scroll">
+        <div class="flex flex-wrap gap-2 max-h-28 overflow-y-auto custom-scroll pr-2">
           @for (ing of store.analysisResult()?.detectedIngredients; track ing) {
-            <span class="px-3 py-1 bg-slate-900 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 shadow-sm">{{ ing }}</span>
+            <span class="px-3 py-1.5 bg-slate-800/80 text-slate-300 rounded-full text-xs font-medium border border-slate-700/50 hover:border-emerald-500/30 transition-colors cursor-default">{{ ing }}</span>
           }
           @for (bev of store.analysisResult()?.detectedBeverages; track bev) {
-            <span class="px-3 py-1 bg-blue-950/40 text-blue-300 rounded-lg text-xs font-medium border border-blue-900/50">{{ bev }}</span>
+            <span class="px-3 py-1.5 bg-blue-950/50 text-blue-300 rounded-full text-xs font-medium border border-blue-800/50 hover:border-blue-500/30 transition-colors cursor-default flex items-center gap-1">
+              <span class="material-icons-round text-xs">local_drink</span>{{ bev }}
+            </span>
           }
         </div>
       </div>
+
+      <!-- Separator Line -->
+      <div class="h-px bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800"></div>
 
       <!-- Recipes Grid -->
       <div class="flex-1 overflow-y-auto p-6 md:p-8 custom-scroll">
         
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-white">Suggested Recipes</h3>
+          <div class="flex items-center gap-3">
+            <div class="w-1 h-6 bg-emerald-500 rounded-full"></div>
+            <h3 class="text-xl font-bold text-white">Suggested Recipes</h3>
+            <span class="text-sm text-slate-500">({{ store.filteredRecipes().length }})</span>
+          </div>
           @if (store.isLoading()) {
             <div class="flex items-center gap-2 text-emerald-400 text-sm animate-pulse">
               <span class="material-icons-round text-base animate-spin">refresh</span> Updating...
@@ -201,6 +219,60 @@ import { StoreService, Recipe } from '../services/store.service';
           </div>
         </div>
       }
+
+      <!-- Rename Modal -->
+      @if (showRenameModal()) {
+        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div (click)="cancelRename()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm animate-fade-in"></div>
+          <div class="relative bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <span class="material-icons-round text-blue-400">edit</span> Rename Profile
+            </h3>
+            <input 
+              type="text" 
+              [(ngModel)]="renameInputValue"
+              maxlength="20"
+              placeholder="Enter new name"
+              class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition mb-4"
+              (keydown.enter)="confirmRename()"
+              autofocus>
+            <div class="flex gap-3">
+              <button (click)="cancelRename()" class="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition">
+                Cancel
+              </button>
+              <button (click)="confirmRename()" class="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition">
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Delete Confirmation Modal -->
+      @if (showDeleteModal()) {
+        <div class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          <div (click)="cancelDelete()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm animate-fade-in"></div>
+          <div class="relative bg-slate-900 border border-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 bg-red-900/30 rounded-full flex items-center justify-center">
+                <span class="material-icons-round text-red-400 text-2xl">delete_forever</span>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">Clear Slot {{ deleteSlotId() }}?</h3>
+                <p class="text-sm text-slate-400">This action cannot be undone.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button (click)="cancelDelete()" class="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition">
+                Cancel
+              </button>
+              <button (click)="confirmDelete()" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-medium transition">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -219,6 +291,15 @@ export class RecipeListComponent {
   
   showManageModal = false;
   slots = [1, 2, 3];
+
+  // Rename modal state
+  showRenameModal = signal(false);
+  renameSlotId = signal<number>(0);
+  renameInputValue = '';
+
+  // Delete modal state
+  showDeleteModal = signal(false);
+  deleteSlotId = signal<number>(0);
 
   selectRecipe(recipe: Recipe) {
     this.store.setSelectedRecipe(recipe);
@@ -261,19 +342,28 @@ export class RecipeListComponent {
     this.store.saveProfileToSlot(slot, name);
   }
 
+  // --- Rename Modal Logic ---
   renameSlot(event: Event, slot: number, currentName: string) {
     event.stopPropagation();
-    let newName = prompt("Rename profile (max 20 chars):", currentName);
-    if (newName !== null) {
-      newName = newName.trim();
-      if (newName.length > 20) {
-        newName = newName.substring(0, 20);
-      }
-      if (newName.length === 0) {
-        newName = "Untitled Fridge";
-      }
-      this.store.renameProfile(slot, newName);
+    this.renameSlotId.set(slot);
+    this.renameInputValue = currentName;
+    this.showRenameModal.set(true);
+  }
+
+  confirmRename() {
+    let newName = this.renameInputValue.trim();
+    if (newName.length > 20) {
+      newName = newName.substring(0, 20);
     }
+    if (newName.length === 0) {
+      newName = "Untitled Fridge";
+    }
+    this.store.renameProfile(this.renameSlotId(), newName);
+    this.showRenameModal.set(false);
+  }
+
+  cancelRename() {
+    this.showRenameModal.set(false);
   }
 
   loadSlot(event: Event, profile: any) {
@@ -282,10 +372,19 @@ export class RecipeListComponent {
     this.closeManageModal();
   }
 
+  // --- Delete Modal Logic ---
   deleteSlot(event: Event, slot: number) {
     event.stopPropagation();
-    if (confirm(`Clear slot ${slot}?`)) {
-      this.store.deleteProfile(slot);
-    }
+    this.deleteSlotId.set(slot);
+    this.showDeleteModal.set(true);
+  }
+
+  confirmDelete() {
+    this.store.deleteProfile(this.deleteSlotId());
+    this.showDeleteModal.set(false);
+  }
+
+  cancelDelete() {
+    this.showDeleteModal.set(false);
   }
 }

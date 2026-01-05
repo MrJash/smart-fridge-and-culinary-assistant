@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StoreService } from './services/store.service';
+import { LandingComponent } from './components/landing.component';
 import { CameraComponent } from './components/camera.component';
 import { RecipeListComponent } from './components/recipe-list.component';
 import { CookingModeComponent } from './components/cooking-mode.component';
@@ -10,7 +11,8 @@ import { ShoppingListComponent } from './components/shopping-list.component';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
+    LandingComponent,
     CameraComponent, 
     RecipeListComponent, 
     CookingModeComponent,
@@ -46,7 +48,6 @@ export class AppComponent {
     { id: 'Vegan', label: 'Vegan', icon: 'eco' },
     { id: 'Keto', label: 'Keto', icon: 'fitness_center' },
     { id: 'Gluten Free', label: 'Gluten Free', icon: 'grain' },
-    { id: 'Paleo', label: 'Paleo', icon: 'restaurant' }
   ];
 
   toggleShoppingList() {

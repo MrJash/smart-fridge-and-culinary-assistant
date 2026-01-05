@@ -1,8 +1,23 @@
-import { Component, inject, computed, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, computed, signal, ViewChild, ElementRef, Pipe, PipeTransform } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { StoreService } from '../services/store.service';
 import { GeminiService } from '../services/gemini.service';
+
+@Pipe({ name: 'markdown', standalone: true })
+export class MarkdownPipe implements PipeTransform {
+  constructor(private sanitizer: DomSanitizer) {}
+  
+  transform(text: string): SafeHtml {
+    if (!text) return '';
+    let html = text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/\n/g, '<br>');
+    html = html.replace(/^[•\-]\s/gm, '• ');
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+}
 
 interface ChatMessage {
   sender: 'user' | 'ai';
@@ -12,7 +27,7 @@ interface ChatMessage {
 @Component({
   selector: 'app-cooking-mode',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MarkdownPipe],
   template: `
     <div class="h-full flex flex-col bg-slate-950 animate-fade-in relative">
       <!-- Header -->
@@ -73,15 +88,13 @@ interface ChatMessage {
               <div class="overflow-hidden transition-all duration-300 ease-in-out" 
                    [style.max-height]="expandedStepIndex === $index ? '500px' : '0px'"
                    [style.opacity]="expandedStepIndex === $index ? '1' : '0'">
-                <!-- No box styling, just padding and text color change -->
-                <div class="px-6 pb-6 pl-[4.5rem]">
-                   
-                   <p class="text-slate-400 text-base leading-relaxed border-l-2 border-slate-700 pl-4">
+                <div class="px-6 pb-6 pl-[4.5rem] pt-2">
+                   <p class="text-slate-400 text-base leading-relaxed">
                      {{ step.detailedDescription }}
                    </p>
                    
-                   <div class="mt-4 flex justify-end">
-                      <button (click)="speakStep(step.instruction + '. ' + step.detailedDescription)" class="text-xs flex items-center gap-1 text-slate-500 hover:text-emerald-400 transition uppercase font-bold tracking-wider">
+                   <div class="mt-5 flex justify-end">
+                      <button (click)="speakStep(step.instruction + '. ' + step.detailedDescription); $event.stopPropagation()" class="text-xs flex items-center gap-1.5 text-slate-500 hover:text-emerald-400 transition uppercase font-bold tracking-wider px-3 py-1.5 rounded-full hover:bg-emerald-500/10">
                         <span class="material-icons-round text-sm">volume_up</span> Read
                       </button>
                    </div>
@@ -98,35 +111,43 @@ interface ChatMessage {
       </button>
 
       <!-- Chat Overlay -->
-      <div *ngIf="showChat" class="absolute inset-x-0 bottom-0 top-1/4 md:top-1/3 md:left-auto md:right-6 md:w-96 md:bottom-24 md:rounded-2xl z-50 bg-slate-900/95 backdrop-blur-xl border-t md:border border-slate-700 shadow-2xl flex flex-col animate-slide-up overflow-hidden">
+      <div *ngIf="showChat" class="absolute inset-x-0 bottom-0 top-1/4 md:top-auto md:left-auto md:right-6 md:w-[420px] md:h-[500px] md:bottom-24 md:rounded-2xl z-50 bg-slate-900/98 backdrop-blur-xl border-t md:border border-slate-700/80 shadow-2xl shadow-black/40 flex flex-col animate-slide-up overflow-hidden">
         <!-- Chat Header -->
-        <div class="p-4 bg-slate-800/50 border-b border-slate-700 flex justify-between items-center">
-          <div class="flex items-center gap-2">
-            <span class="material-icons-round text-emerald-400">assistant</span>
-            <span class="font-bold text-white">Chef Assistant</span>
+        <div class="p-4 bg-gradient-to-r from-emerald-600/20 to-slate-800/50 border-b border-slate-700/50 flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+              <span class="material-icons-round text-emerald-400 text-xl">restaurant</span>
+            </div>
+            <div>
+              <span class="font-bold text-white block">Chef Assistant</span>
+              <span class="text-xs text-emerald-400/80">Ask anything about this recipe</span>
+            </div>
           </div>
-          <button (click)="toggleChat()" class="text-slate-400 hover:text-white">
+          <button (click)="toggleChat()" class="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 transition">
             <span class="material-icons-round">close</span>
           </button>
         </div>
 
         <!-- Messages -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll" #chatContainer>
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scroll flex flex-col" #chatContainer>
           @if (chatMessages().length === 0) {
-            <div class="text-center text-slate-500 mt-8 text-sm">
-              <p>Ask me anything about this recipe!</p>
-              <p class="mt-2 text-xs opacity-70">"What side dish goes with this?"</p>
+            <div class="text-center text-slate-500 mt-12 px-4">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <span class="material-icons-round text-emerald-500/50 text-3xl">chat</span>
+              </div>
+              <p class="text-sm font-medium">Ask me anything about this recipe!</p>
+              <p class="mt-2 text-xs text-slate-600">"What side dish goes with this?"</p>
+              <p class="text-xs text-slate-600">"Can I substitute the butter?"</p>
             </div>
           }
           @for (msg of chatMessages(); track $index) {
-            <div [class.self-end]="msg.sender === 'user'" [class.self-start]="msg.sender === 'ai'" 
-                 class="max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed"
-                 [class.bg-emerald-600]="msg.sender === 'user'"
-                 [class.text-white]="msg.sender === 'user'"
-                 [class.bg-slate-800]="msg.sender === 'ai'"
-                 [class.text-slate-200]="msg.sender === 'ai'">
-              {{ msg.text }}
-            </div>
+            @if (msg.sender === 'user') {
+              <div class="self-end max-w-[85%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed bg-emerald-600 text-white">
+                {{ msg.text }}
+              </div>
+            } @else {
+              <div class="self-start max-w-[85%] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed bg-slate-800 text-slate-200" [innerHTML]="msg.text | markdown"></div>
+            }
           }
           @if (isChatLoading) {
             <div class="self-start bg-slate-800 rounded-2xl px-4 py-2 flex gap-1">
@@ -138,11 +159,11 @@ interface ChatMessage {
         </div>
 
         <!-- Input -->
-        <div class="p-3 bg-slate-800/50 border-t border-slate-700">
-           <div class="flex gap-2">
-             <input [(ngModel)]="userMessage" (keydown.enter)="sendMessage()" type="text" placeholder="Ask a question..." class="flex-1 bg-slate-950 border border-slate-700 rounded-full px-4 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors">
-             <button (click)="sendMessage()" [disabled]="!userMessage.trim() || isChatLoading" class="w-10 h-10 rounded-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors">
-               <span class="material-icons-round text-lg">send</span>
+        <div class="p-4 bg-slate-800/30 border-t border-slate-700/50">
+           <div class="flex gap-2 items-center">
+             <input [(ngModel)]="userMessage" (keydown.enter)="sendMessage()" type="text" placeholder="Ask about ingredients, techniques, substitutions..." class="flex-1 bg-slate-950/80 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+             <button (click)="sendMessage()" [disabled]="!userMessage.trim() || isChatLoading" class="w-11 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20">
+               <span class="material-icons-round text-xl">send</span>
              </button>
            </div>
         </div>
@@ -205,7 +226,6 @@ export class CookingModeComponent {
 
   readAllSteps() {
     const steps = this.recipe()?.steps || [];
-    // Handle objects properly by mapping instruction text
     const text = steps.map(s => s.instruction).join('. Next step. ');
     this.speak(text);
   }

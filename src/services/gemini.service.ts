@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
+import { environment } from '../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -7,25 +8,23 @@ import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
 export class GeminiService {
   private ai: GoogleGenAI;
   private readonly MODEL_ID = 'gemini-2.5-flash';
-  // Increased timeout to fix "Request timed out" errors for complex JSON generation
-  // Paleo and strict diets often require more processing time.
   private readonly TIMEOUT_MS = 60000; 
 
-  constructor() {
-    // FIX: process.env is not available in the browser.
-    // TODO: Replace 'YOUR_API_KEY_HERE' with your actual Google Gemini API Key.
-    // WARNING: Do not commit this key to public repositories.
-    const apiKey = 'YOUR_API_KEY_HERE'; 
+constructor() {
+    const apiKey = environment.geminiApiKey;
     
-    this.ai = new GoogleGenAI({ apiKey });
-  }
+    if (!apiKey) {
+      console.error('Gemini API Key is missing! Check your environment configuration.');
+    }
+    
+    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
+}
 
   private generateId(): string {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       try {
         return crypto.randomUUID();
       } catch (e) {
-        // Fallback
       }
     }
     return Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -70,7 +69,6 @@ export class GeminiService {
     };
   }
 
-  // Improved JSON cleaner
   private cleanJson(text: string): string {
     if (!text) return '';
     let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -82,15 +80,11 @@ export class GeminiService {
     return cleaned;
   }
 
-  // Sanitize data helper
   private sanitizeData(data: any): any {
     const safeArray = (arr: any) => Array.isArray(arr) ? arr : [];
 
-    // Ensure top level arrays
     if (data.detectedIngredients) data.detectedIngredients = safeArray(data.detectedIngredients);
     if (data.detectedBeverages) data.detectedBeverages = safeArray(data.detectedBeverages);
-    
-    // Ensure recipe arrays
     if (data.recipes) {
       data.recipes = safeArray(data.recipes)
         .map((r: any) => ({
@@ -98,4 +92,65 @@ export class GeminiService {
           id: r.id || this.generateId(),
           title: r.title ? r.title.split('(')[0].trim().substring(0, 50) : 'Untitled Recipe', 
           description: r.description || 'No description available.',
-          difficulty:
+          difficulty: r.difficulty || 'Medium',
+        prepTime: r.prepTime || '15 min',
+        calories: Number(r.calories) || 0,
+        steps: safeArray(r.steps).map((s: any) => ({
+          instruction: s.instruction || 'Step',
+          detailedDescription: s.detailedDescription || 'No details.'
+        })),
+        missingIngredients: safeArray(r.missingIngredients),
+        tags: safeArray(r.tags)
+      }));
+    }
+    return data;
+  }
+
+  async analyzeFridge(imageBase64: string, filter: string = 'None'): Promise<any> {
+    const prompt = `Analyze this fridge image. Identify ingredients and suggest 6-8 recipes for ${filter} diet. JSON ONLY.`;
+    const response = await this.ai.models.generateContent({
+      model: this.MODEL_ID,
+      contents: {
+        role: 'user',
+        parts: [
+          { inlineData: { mimeType: 'image/jpeg', data: imageBase64 } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            detectedIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+            detectedBeverages: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recipes: (this.getRecipeSchema() as any).properties.recipes
+          }
+        }
+      }
+    });
+    const parsed = JSON.parse(this.cleanJson(response.text));
+    return this.sanitizeData(parsed);
+  }
+
+  async suggestRecipesFromIngredients(ingredients: string[], filter: string): Promise<any> {
+    const prompt = `Ingredients: ${ingredients.join(', ')}. Generate 5 recipes for ${filter}. JSON ONLY.`;
+    const response = await this.ai.models.generateContent({
+      model: this.MODEL_ID,
+      contents: { role: 'user', parts: [{ text: prompt }] },
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: this.getRecipeSchema()
+      }
+    });
+    return this.sanitizeData(JSON.parse(this.cleanJson(response.text)));
+  }
+
+  async askChef(recipeContext: any, userQuestion: string): Promise<string> {
+    const response = await this.ai.models.generateContent({
+      model: this.MODEL_ID,
+      contents: `Recipe: ${recipeContext.title}. Question: ${userQuestion}. Reply briefly.`,
+    });
+    return response.text;
+  }
+}
