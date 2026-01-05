@@ -8,6 +8,7 @@ A smart web application that helps you manage your refrigerator items and discov
 - **Inventory Management**: Keep track of items in your fridge
 - **Recipe Discovery**: Find recipes based on your available ingredients
 - **Smart Suggestions**: Get personalized recipe recommendations
+- **Chef Assistant**: Built-in AI Chatbot for users to get more help and information related to recipe steps
 
 ## Installation
 
