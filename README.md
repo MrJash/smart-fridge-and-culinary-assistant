@@ -1,10 +1,7 @@
 # Smart Fridge and Culinary Assistant
 
-A smart application that helps you manage your kitchen inventory and discover recipes based on available ingredients.
+A smart web application that helps you manage your refrigerator items and discover recipes based on available ingredients.
 
-## Generative AI Content Notice
-
-This project includes content generated with the assistance of GitHub Copilot. GitHub Copilot is an AI-powered code completion tool developed by GitHub and OpenAI that helps developers write code more efficiently. For more information about GitHub Copilot and how it works, visit [GitHub Copilot](https://github.com/features/copilot).
 
 ## Features
 
@@ -37,12 +34,17 @@ The application is ready to use immediately after startup. No login is required 
 ### Getting Started
 
 1. Add ingredients to your fridge inventory
-2. Browse available recipes based on what you have
-3. View detailed instructions and nutrition information
+2. Upload photo of your fridge inventory to the Web App
+3. Browse available recipes based on what you have
+4. View detailed instructions and nutrition information
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Generative AI Content Notice
+
+This project includes content generated with the assistance of GitHub Copilot. GitHub Copilot is an AI-powered code completion tool developed by GitHub and OpenAI that helps developers write code more efficiently. For more information about GitHub Copilot and how it works, visit [GitHub Copilot](https://github.com/features/copilot).
 
 ## License
 
