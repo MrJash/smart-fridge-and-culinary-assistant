@@ -190,7 +190,7 @@ This project includes content and code generation assisted by GitHub Copilot, an
 
 ## Project Status
 
-This project was built for personal understanding and exploration of modern web development practices with Angular, AI integration, and real-time inventory management. It serves as a portfolio web app showcasing full-stack development capabilities.
+This project was built for personal understanding and exploration of modern web development practices with Angular, AI integration, and real-time inventory management. It serves as a portfolio web app showcasing frontend development & AI Integration capabilities.
 
 ## Contact
 
