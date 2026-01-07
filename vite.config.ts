@@ -6,10 +6,7 @@ export default defineConfig(({ command, mode }) => {
   
   return {
     define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY || ''),
-      'import.meta.env.MODE': JSON.stringify(mode),
-      'import.meta.env.DEV': command === 'serve',
-      'import.meta.env.PROD': command === 'build'
+      __VITE_GEMINI_API_KEY__: JSON.stringify(env.VITE_GEMINI_API_KEY || '')
     }
   };
 });

@@ -13,9 +13,9 @@ export class GeminiService {
 constructor() {
     let apiKey = environment.geminiApiKey;
     
-    // Get from Vite env vars (works in local dev and Vercel build)
-    if (!apiKey) {
-      apiKey = (import.meta.env.VITE_GEMINI_API_KEY as string) || '';
+    // Try to get from window object (injected by index.html script)
+    if (!apiKey && typeof window !== 'undefined' && (window as any).VITE_GEMINI_API_KEY) {
+      apiKey = (window as any).VITE_GEMINI_API_KEY;
     }
     
     if (!apiKey) {
