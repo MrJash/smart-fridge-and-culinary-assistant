@@ -11,7 +11,17 @@ export class GeminiService {
   private readonly TIMEOUT_MS = 60000; 
 
 constructor() {
-    const apiKey = environment.geminiApiKey;
+    let apiKey = environment.geminiApiKey;
+    
+    // Try to get from Vite env vars (local dev via .env.local)
+    if (!apiKey && typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) {
+      apiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
+    }
+    
+    // Try to get from window object (Vercel)
+    if (!apiKey && typeof window !== 'undefined' && (window as any).NG_APP_GEMINI_API_KEY) {
+      apiKey = (window as any).NG_APP_GEMINI_API_KEY;
+    }
     
     if (!apiKey) {
       console.error('Gemini API Key is missing! Check your environment configuration.');
