@@ -9,20 +9,31 @@ export class GeminiService {
   private ai: GoogleGenAI;
   private readonly MODEL_ID = 'gemini-2.5-flash';
   private readonly TIMEOUT_MS = 60000; 
+  private readonly useServerApi: boolean;
 
 constructor() {
-    let apiKey = environment.geminiApiKey;
+    const metaEnv = (import.meta as any)?.env;
+    const viteApiKey = metaEnv?.VITE_GEMINI_API_KEY;
+    let apiKey = environment.geminiApiKey || viteApiKey;
     
     // Try to get from window object (injected by index.html script)
     if (!apiKey && typeof window !== 'undefined' && (window as any).VITE_GEMINI_API_KEY) {
       apiKey = (window as any).VITE_GEMINI_API_KEY;
     }
+
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '';
+    this.useServerApi = environment.production || !isLocalhost;
     
-    if (!apiKey) {
-      console.error('Gemini API Key is missing! Check your environment configuration.');
+    if (!this.useServerApi) {
+      if (!apiKey) {
+        console.error('Gemini API Key is missing! Check your environment configuration.');
+      }
+      this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
+    } else {
+      // Placeholder instance; should not be used in server mode.
+      this.ai = new GoogleGenAI({ apiKey: '' });
     }
-    
-    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
 }
 
   private generateId(): string {
@@ -112,6 +123,19 @@ constructor() {
   }
 
   async analyzeFridge(imageBase64: string, filter: string = 'None'): Promise<any> {
+    if (this.useServerApi) {
+      const res = await fetch('/api/gemini/analyze-fridge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64, filter })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Server request failed');
+      }
+      return this.sanitizeData(await res.json());
+    }
+
     const prompt = `Analyze this fridge image. Identify ingredients and suggest 6-8 recipes for ${filter} diet. JSON ONLY.`;
     const response = await this.ai.models.generateContent({
       model: this.MODEL_ID,
@@ -139,6 +163,19 @@ constructor() {
   }
 
   async suggestRecipesFromIngredients(ingredients: string[], filter: string): Promise<any> {
+    if (this.useServerApi) {
+      const res = await fetch('/api/gemini/suggest-recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredients, filter })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Server request failed');
+      }
+      return this.sanitizeData(await res.json());
+    }
+
     const prompt = `Ingredients: ${ingredients.join(', ')}. Generate 5 recipes for ${filter}. JSON ONLY.`;
     const response = await this.ai.models.generateContent({
       model: this.MODEL_ID,
@@ -152,6 +189,20 @@ constructor() {
   }
 
   async askChef(recipeContext: any, userQuestion: string): Promise<string> {
+    if (this.useServerApi) {
+      const res = await fetch('/api/gemini/ask-chef', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeContext, userQuestion })
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || 'Server request failed');
+      }
+      const data = await res.json();
+      return data?.text || '';
+    }
+
     const response = await this.ai.models.generateContent({
       model: this.MODEL_ID,
       contents: `Recipe: ${recipeContext.title}. Question: ${userQuestion}. Reply briefly.`,

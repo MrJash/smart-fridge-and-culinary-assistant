@@ -47,11 +47,9 @@ npm install
 ```
 
 3. Configure your environment:
-   - Create or edit `.env.local` in the root directory
-   - Add your Gemini API key:
-   ```
-   GEMINI_API_KEY=your_api_key_here
-   ```
+   - Local development (recommended): use `src/environments/environment.local.ts` (gitignored) and set `geminiApiKey`.
+   - Alternative local option: create `.env.local` and set `VITE_GEMINI_API_KEY=...` (also gitignored).
+   - Production (Vercel): set `GEMINI_API_KEY` in Vercel Project Settings → Environment Variables (never shipped to the browser).
 
 4. Start the development server:
 ```bash
@@ -138,7 +136,9 @@ Each environment can define different API endpoints and feature flags.
 
 ## Deployment
 
-The project includes Vercel configuration for easy deployment. Connect your GitHub repository to Vercel, and the web app will automatically build and deploy on every push to the main branch.
+The project includes Vercel configuration for easy deployment. Connect your GitHub repository to Vercel, set `GEMINI_API_KEY` in Vercel, and the web app will automatically build and deploy on every push to the main branch.
+
+Note: In production the app calls Vercel Serverless Functions under `/api/gemini/*` so the Gemini API key stays server-side.
 
 For other hosting platforms, build the project with `npm run build` and deploy the `dist/` directory.
 

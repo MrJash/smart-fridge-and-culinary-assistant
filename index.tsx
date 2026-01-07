@@ -3,9 +3,10 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { AppComponent } from './src/app.component';
 
-// Inject API key into window from Vite build-time constant
-if (typeof window !== 'undefined' && typeof __VITE_GEMINI_API_KEY__ !== 'undefined') {
-  (window as any).VITE_GEMINI_API_KEY = __VITE_GEMINI_API_KEY__;
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (typeof window !== 'undefined' && geminiApiKey) {
+  (window as any).VITE_GEMINI_API_KEY = geminiApiKey;
 }
 
 bootstrapApplication(AppComponent, {
