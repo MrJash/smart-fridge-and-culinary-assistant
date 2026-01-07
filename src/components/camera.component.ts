@@ -177,10 +177,66 @@ export class CameraComponent {
     }
   }
 
+  private estimateBase64Bytes(base64: string): number {
+    // base64 bytes ~= len * 3/4 (minus padding)
+    const len = base64.length;
+    const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0;
+    return Math.floor((len * 3) / 4) - padding;
+  }
+
+  private async optimizeJpegBase64(base64: string, maxBytes = 900 * 1024): Promise<string> {
+    if (!base64) return base64;
+
+    // If it's already small enough, don't touch it.
+    if (this.estimateBase64Bytes(base64) <= maxBytes) return base64;
+
+    const img = new Image();
+    img.src = `data:image/jpeg;base64,${base64}`;
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image for compression'));
+    });
+
+    // Start with a conservative max dimension (keeps payload under Vercel limits)
+    let maxDim = 768;
+    let quality = 0.75;
+
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.floor(img.width * scale));
+      const height = Math.max(1, Math.floor(img.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      const nextBase64 = dataUrl.split(',')[1] || '';
+
+      if (this.estimateBase64Bytes(nextBase64) <= maxBytes) {
+        return nextBase64;
+      }
+
+      // First try lowering quality, then reduce dimensions.
+      if (quality > 0.45) {
+        quality = Math.max(0.45, quality - 0.1);
+      } else {
+        maxDim = Math.max(384, Math.floor(maxDim * 0.85));
+      }
+    }
+
+    // Return the last attempt even if still large.
+    return base64;
+  }
+
   async processImage(base64: string) {
     this.store.setLoading(true);
     try {
-      const result = await this.geminiService.analyzeFridge(base64, this.store.dietaryFilter());
+      const optimizedBase64 = await this.optimizeJpegBase64(base64);
+      const result = await this.geminiService.analyzeFridge(optimizedBase64, this.store.dietaryFilter());
       this.store.setAnalysisResult(result);
       
       if (result.detectedIngredients && result.detectedIngredients.length > 0 && result.recipes && result.recipes.length === 0) {
