@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+src/environments/
+.env.local
 .angular
 src/environments/
 
